@@ -1,0 +1,206 @@
+---
+title: '{ggplot2} review'
+subtitle: 'EDS 240 - Lecture 1.3'
+date: 2024-01-08
+output: html
+code-fold: true
+---
+
+```{r, results='hide'}
+library(tidyverse)
+library(ggplot2)
+library(palmerpenguins)
+```
+
+## About {`ggplot2}`
+
+-   Utilizes the "grammar of graphics"
+-   Primary graphical layers
+    -   data - in tidy format, define aesthetics
+        -   aesthetics - how variables map onto a plot (e.g. axes, shape, color, size)
+    -   geometric objects (geoms)
+        -   define the type of plots
+-   Secondary graphical layers
+    -   statistical transformations
+    -   position adjustments
+    -   coordinate systems
+    -   facet
+-   About input, tidy data
+    -   each variable is a column
+    -   each observation forms a row
+    -   each cell is a single measurement
+-   Note
+
+## Tidy Data
+
+**Example** - tidy the temperature data below
+
+```{r}
+# create untidy data 
+temp_data_wide <- tribble(
+  ~date, ~station1, ~station2,  ~station3,
+  "2023-10-01", 30.1, 29.8,  31.2,
+  "2023-11-01", 28.6, 29.1,  33.4,
+  "2023-12-01", 29.9, 28.5,  32.3
+)
+
+head(temp_data_wide, 2)
+```
+
+How is this untidy?
+
+-   each row represents more than one observation
+-   station should be a variable, not the column name
+-   column name is not informative of actual data value (temp C)
+
+```{r}
+# create a tidy version of this df
+temp_data_long <- temp_data_wide %>% 
+  pivot_longer(cols = starts_with("station"), #pivot cols w/name station
+               names_to = "station_id", #create col w/all stations
+               values_to = "temp_c") #new col name for temp values
+
+head(temp_data_long, 2)
+```
+
+## Palmer's Penguins
+
+Creating visualizations using `ggplot2` and the `palmerspenguins` packages. This data is already tidy.
+
+### Plot 1 - Bill Length x Bill Depth
+
+We'll start by exploring the relationship between penguin **bill length** and **bill depth**. For this example, we'll focus on understanding the following layers of a ggplot:
+
+-   data
+-   geometric objects (geoms)
+-   scales
+    -   update how the aesthetic mappings manifest visually
+    -   e.g. - color scales, axis ticks, legends
+-   Note
+
+Color Aesthetics
+
+::: panel-tabset
+#### Map Color Locally
+
+Color w/in `geom(aes())`
+
+```{r}
+ggplot(data = na.omit(penguins), #tidy data, omit na's
+       mapping = aes(x = bill_length_mm, #mapping aesthetic, x-axis variable
+                     y = bill_depth_mm)) + #color based on variable w/in aes
+  geom_point(aes(color = species)) + #scatter plot
+  geom_smooth(method = 'lm')
+```
+
+#### Map Color Globaly
+
+```{r}
+ggplot(na.omit(penguins), aes(x = bill_length_mm,
+                              y = bill_depth_mm,
+                              color = species)) +
+  geom_point() +
+  geom_smooth(method = 'lm') #since color by sp, indv lines for sp
+```
+:::
+
+```{r}
+# can define data w/in geometric object
+ggplot() +
+  geom_point(aes(x = bill_length_mm, #for geoms, mapping and data are flipped
+                 y = bill_depth_mm), #this method allows for mult geoms
+             penguins,
+             color = 'dodgerblue') #change to a single color w/in geom
+```
+
+Categorical vs. Continuous Variables
+
+```{r}
+# manually adjusting colors, categorical variable
+ggplot(na.omit(penguins), aes(x = bill_length_mm,
+                              y = bill_depth_mm,
+                              color = species)) +
+  geom_point() +
+  scale_color_manual(values = c("#FF8302", "#C35CCA", "#067575"))
+
+# adjusting colors, continuous variable
+ggplot(na.omit(penguins), aes(x = body_mass_g, y = flipper_length_mm, color = body_mass_g)) +
+  geom_point() +
+  scale_color_gradient(low = "purple4", high = "orchid")
+```
+
+### Plot 2 - Penguin Species Counts
+
+In this next example, we'll explore penguin species counts. For this example, we'll focus on understanding the following layers of a ggplot:
+
+-   data
+-   geoms
+-   statistical transformations
+-   position adjustments
+-   coordnate system
+-   themes
+
+```{r, eval=FALSE}
+# initialize plot
+ggplot(penguins, aes(x = species)) +
+  geom_bar()
+```
+
+Overriding `geom_bar()`'s stat:
+
+```{r}
+# create summary table
+penguins_summary <- penguins %>% 
+  count(species)
+
+# plot
+ggplot(penguins_summary, aes(x = species, 
+                             y = n)) +
+  geom_col()
+```
+
+Override default stat mapping
+
+```{r}
+# use prop to calculate a proportion
+ggplot(penguins, aes(x = species, y = after_stat(prop),
+                     group = 1)) + #ungroups so not all vals = 1
+  geom_bar()
+```
+
+### Position Adjustment
+
+Fill vs. color depends on geom. Smaller items such as points and lines use `color`, whereas larger areas such as bars use `fill`. The default position of `geom_bar` is `stack`, which we'll change here:
+
+-   try setting position equal to 'dodge', 'fill', etc.
+-   can set position using a position function
+
+```{r}
+ggplot(penguins, aes(x = species, 
+                     fill = island)) +
+  geom_bar(position = position_dodge2(preserve = 'single'))
+```
+
+**Coordinate systems**
+
+Default is `coord_cartesian`, but it can be adjusted by adding a `coord` argument:
+
+```{r}
+ggplot(penguins, aes(x = species)) +
+  geom_bar() +
+  coord_flip() 
+
+ggplot(penguins, aes(x = species)) +
+  geom_bar() +
+  coord_polar() 
+```
+
+Adding pre-built themes
+
+```{r}
+ggplot(penguins, aes(x = species)) +
+  geom_bar() +
+  coord_flip() +
+  theme_classic() +
+  theme(axis.title = element_text(size = 17, color = 'purple4'))
+```
