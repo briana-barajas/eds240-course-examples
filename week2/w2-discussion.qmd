@@ -1,0 +1,40 @@
+---
+title: 'Week 2 Discussion'
+author: 'Briana Barajas'
+date: 2024-01-17
+---
+
+## Alternative Text
+
+-   alt text is embedded and improves
+-   when writing alt text for data visualization, consider the following format
+    -   \[chart type\] of \[type of data\] where \[reason for including chart\]
+    -   Examples
+        -   alt = A boxplot (chart) of penguin flipper lengths (data) where Gentoo penguins have flipper lengths that are about 12% larger than Adelie or Chinstrap penguins (reason)
+-   compare to figure captions
+    -   **figure caption** - text that is displayed on the screen and is used to provide additional information and context
+        -   typically beneath the data visualization it's associated with
+    -   alternative text - is *not* rendered on screen, but is identified and read aloud by screen readers. It's used to describe the main takeaway(s) of a data visualization
+-   Notes
+
+## Group Practice
+
+-   Practice 1
+    -   figure caption
+        -   Question: What is the relationship between % change in population for different countries
+        -   Answer:
+    -   alternative text
+        -   scatter plot of the relationship between % change in population and climate change vulnerability where populations with higher average annual percent change in population tend to be at more extreme risk of
+-   Practice 2
+    -   figure caption
+        -   Question: How does coral cover change over years in historical versus post warming trajectory?
+        -   Answer: In post-warming conditions, % coral is expected to take more years to reach the same point as the estimated historical trajectory.
+    -   alternative text
+        -   line graph of coral recovery over time where post-warming trajectory is less predictable and slower than historical trajectory
+-   Practice3
+    -   figure caption
+        -   Question for map: Where are most vulnerable nations found? Where are most emitting countries found?
+        -   Answer for map: Africa is the most vulnerable, and high emissions are found almost everywhere else
+    -   alternative text
+        -   oof
+-   See slides for image
