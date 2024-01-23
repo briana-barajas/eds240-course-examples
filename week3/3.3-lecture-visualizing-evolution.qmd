@@ -1,0 +1,79 @@
+---
+title: 'Visualizing Evolution'
+subtitle: 'Lecture 3.3 for EDS 240'
+author: 'Briana Barajas'
+---
+## Background
+Enter here
+
+## Preparation 
+```{r, warning=FALSE, message=FALSE, results='hide'}
+## === Load libraries ===
+library(tidycensus)
+library(janitor)
+library(tidyverse)
+library(gghighlight)
+
+## === Source API key ===
+# this will execture everything in a file, loading it into our environment
+source(here::here("week3", "KEYS.R"))
+census_api_key(censusKEY)
+
+## Read in data ===
+lyme <- read_csv(here::here("week3", "data", "LD-Case-Counts-by-County-01-20.csv"))
+```
+
+
+## Wrangling
+Data wrangling and creating summary statistics
+```{r}
+# ========== lyme data ===========
+lyme_clean <- lyme %>% 
+  
+  # standard name clean, lower snake case 
+  clean_names() %>% 
+  
+  # rename columns (new = old)
+  rename(county = ctyname,
+         state = stname,
+         status = ststatus) %>% 
+  
+  # pivot data, long to wide.
+  pivot_longer(cols = 6:25, #cols to pivot
+               names_to = "city_year", 
+               values_to = "reported_cases") %>%
+  
+  # remove string from city_year, so only numeric year is in col
+  mutate(year = str_remove(city_year, pattern = "cases"),
+         year = as.factor(year))
+
+# calculate total bases per state (summary stats) ---
+lyme_by_state <- lyme_clean %>% 
+  group_by(year, state) %>% 
+  summarise(total_cases = sum(reported_cases))
+
+# ========== population data ==========
+# get population estimates by state using `get_estimates`
+us_state_pop <- get_estimates(geography = "state", 
+                              product = "population",
+                              state = NULL, 
+                              year = 2019) %>% 
+  filter(variable == "POP") %>% 
+  select(state = NAME, population = value)
+
+# save data to csv (useful for working offline)
+write_csv(us_state_pop, file = here::here("week3", "data", "us_state_pop.csv"))
+
+## ========== joining data ==========
+lyme_pop <- left_join(lyme_by_state, us_state_pop) %>% 
+  
+  #add col with number of 100k people per state
+  mutate(pop100k = population/100000) %>% 
+  
+  #calculate num cases per 100k people (common for reporting disease)
+  mutate(cases_per100k = total_cases/pop100k)
+
+  
+
+```
+
