@@ -29,32 +29,28 @@ code-fold: true
 
     a\. For example, do you want to compare, see change or flow, reveal relationships or connections, envision temporal or spatial patterns.
 
-```{=html}
 <!-- -->
-```
-2.  Consider the number of variables and the number of data points, as well as the data types you\'re working with.
+
+2.  Consider the number of variables and the number of data points, as well as the data types you're working with.
 
     a\. For example, do you have several vs. many data points? How many categorical and/or numeric variables? Are your variables ordered or not ordered? Data types can dictate which graphical form is appropriate.
 
     b\. **data types** - continuous vs discrete, nominal vs. ordinal, vs. binary
 
-```{=html}
 <!-- -->
-```
+
 3.  Try different graphic forms, especially if you have more than one task to enable or message to convey.
 
-```{=html}
 <!-- -->
-```
+
 4.  Arrange the components of the graphic to make it as easy as possible to extract meaning from your graphic quickly.
 
     a\. e.g. - ordering bars in a chart
 
     b\. ordering will depend on the question your plot to answer
 
-```{=html}
 <!-- -->
-```
+
 5.  **Test the outcomes of your graphic on others,** particularly on those who are representative of the audience you are trying to reach.
 6.  
 
@@ -63,7 +59,7 @@ code-fold: true
 -   identify the primary and secondary insights that the graphic is trying to convey
 -   Identify elementary perceptual tasks and what is confusing or difficult to do
     -   e.g. comparing lengths, angles
--   Identify if it\'s possible (*and* if it makes sense) to use more effective elementary perceptual tasks for the primary and secondary insights
+-   Identify if it's possible (*and* if it makes sense) to use more effective elementary perceptual tasks for the primary and secondary insights
 -   Identify points of confusion and decide how those could be addressed
     -   e.g. a different graphic form, rearranging components, including an introduction graph, better annotation
 
@@ -81,11 +77,10 @@ code-fold: true
 
 ## Case Study: Bottom Temperatures at Mohawk Reef
 
-### Background 
+### Background
 
 -   using data from the Santa Barbara Coastal Long Term Ecological Research (SBC LTER)
--    data
-    -   imported from the EDI data portal
+-   data - imported from the EDI data portal
 -   Link [here](https://portal.edirepository.org/nis/mapbrowse?scope=knb-lter-sbc&identifier=2007)
 
 ### Data Wrangling
@@ -248,9 +243,8 @@ mko_clean %>%
 
     -   work best when you have \> 6 groups
 
-    ```{=html}
     <!-- -->
-    ```
+
     -   works well when there is a clear pattern in the result (e.g. if there is an obvious ranking in groups) and / or when visualizing changes in distributions over time or space
 
 -   need a numeric variable with lots of values
@@ -284,11 +278,10 @@ ggplot(mko_clean, aes(x = Temp_bot, y = month_name,
 
 -   considerations
 
-    -   box plots *summarize* data, meaning we can\'t see the underlying shape of the distribution or sample size
+    -   box plots *summarize* data, meaning we can't see the underlying shape of the distribution or sample size
 
-    ```{=html}
     <!-- -->
-    ```
+
     -   add jittered points on top, or if large sample size, consider a violin plots
 
 -   notes
@@ -327,9 +320,8 @@ penguins %>%
 
     -   ordering groups by median value can make it easier to understand
 
-    ```{=html}
     <!-- -->
-    ```
+
     -   show sample size when comparing groups with very different distributions (e.g. half violin plot)
 
 -   great for multiple groups

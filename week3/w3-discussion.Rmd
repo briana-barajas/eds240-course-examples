@@ -1,0 +1,118 @@
+---
+title: 'Week 3 Discussion'
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+# Key Plot Types
+
+## Histogram vs. Density
+
+-   Density
+    -   area under curve should equal 1
+    -   shows the probability of getting a particular x-value
+-   Histogram
+    -   area under curve does NOT equal 1
+    -   y-axis is the count, how many times a particular x-value appears
+
+## Ridgeline plots
+
+-   when they're most useful
+    -   for comparing distributions of different groups
+    -   looking at different distributions over time (timeseries)
+-   unlike density plot, ridgeline does not have a numeric y-axis
+
+## Boxplot vs Violin plot
+
+-   Boxplot
+    -   shows key summary statistics
+
+        -   median, 25-50-75 quantiles
+-   violin plot
+    -   shows distribution, where wider points are areas with more
+        common values
+-   overlaying the two allows you to view distribution AND summary
+    statistics at the same time
+    -   recommended/common
+
+# Drought Exercise
+
+### Preparation
+
+```{r}
+# load libraries
+library(tidyverse)
+library(ggridges)
+
+# import data
+tuesdata <- tidytuesdayR::tt_load('2021-07-20')
+drought <- tuesdata$drought
+```
+
+```{r}
+# create an ugly plot
+ggplot(drought, aes(x = area_total, y = state_abb)) +
+  geom_density_ridges2()
+```
+
+### Wrangling
+
+Consider why each step is important
+
+```{r}
+# wrangle data
+drought_clean <- drought %>% 
+
+  # select cols of interest & update names as needed ----
+  select(date = valid_start, state_abb, drought_lvl, area_pct) %>% 
+
+  # add year, month & day cols using {lubridate} fxns ----
+  mutate(year = year(date),
+         month = month(date, label = TRUE, abbr = TRUE),
+         day = day(date)) %>% 
+
+  # add drought level conditions names ----
+  mutate(drought_lvl_long = factor(drought_lvl,
+                            levels = c("D4", "D3", "D2", "D1","D0", "None"),
+                            labels = c("(D4) Exceptional", "(D3) Extreme",
+                                       "(D2) Severe", "(D1) Moderate", "(D0) Abnormally Dry", 
+                                       "No Drought"))) %>% 
+  
+  # reorder cols ----
+  select(date, year, month, day, state_abb, drought_lvl, drought_lvl_long, area_pct)
+
+```
+
+### Plots
+
+Stacked area plot of drought conditions through time
+
+```{r}
+drought_clean %>% 
+  
+  # remove drought_lvl "None" & filter for just CA ----
+  filter(drought_lvl != "None",
+         state_abb == "CA") %>% 
+  
+  # create ggplot ----
+  ggplot(mapping = aes(x = date, y = area_pct, fill = drought_lvl_long)) +
+  
+  # reverse order of groups so level D4 is closest to x-axis ----
+  geom_area(position = position_stack(reverse = TRUE)) +
+  
+  # update colors to match US Drought Monitor (colors selected using ColorPick Eyedropper from original USDM data viz) ----
+  scale_fill_manual(values = c("#853904", "#FF0000", "#FFC100", "#FFD965", "#FFFF00")) +
+  
+  # set x-axis breaks & remove padding between data and x-axis ----
+  scale_x_date(breaks = scales::breaks_pretty(n = 10),
+               expand = c(0, 0)) +
+
+  # set y-axis breaks & convert values to percentages & & remove padding between data and y-axis----
+  scale_y_continuous(breaks = seq(0, 100, by = 10),
+                     labels = scales::label_percent(scale = 1),
+                     expand = c(0, 0)) +
+  
+  # add title ----
+  labs(title = "Drought area in California") 
+```
