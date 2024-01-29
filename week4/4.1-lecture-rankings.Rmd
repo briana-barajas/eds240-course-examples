@@ -1,0 +1,49 @@
+---
+title: "Visualizing Rankings"
+author: "Briana Barajas"
+date: 2024-01-29
+---
+
+## Pre-Class Prep
+Load libraries
+```{r, results='hide'}
+library(tidyverse)
+```
+
+Import data
+```{r, results='hide', message=FALSE, warning=FALSE}
+jobs <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-05/jobs_gender.csv")
+```
+
+### Data Wrangling Review
+To save time, the data wrangling steps were completed as part of the pre-class prep. View slide 4-5, from lecture 4.1 for additional background information on the data.
+
+```{r}
+jobs_clean <- jobs %>% 
+  
+  # add columns needed for dumbell plot
+  mutate(percent_male = 100 - percent_female, # % females w/in industry already included
+         
+         # difference in earnings between M/F
+         difference_earnings = total_earnings_male - total_earnings_female) %>% 
+  
+  # rearrange columns ---
+  relocate(year, major_category, minor_category, occupation,
+           total_workers, workers_male, workers_female,
+           percent_male, percent_female,
+           total_earnings, total_earnings_male, total_earnings_female, difference_earnings,
+           wage_percent_of_male) %>% 
+  
+  #drop rows with missing earning data ----
+drop_na(total_earnings_male, total_earnings_female) %>% 
+  
+  # change occupation data type to factor ----
+mutate(occupation = as.factor(occupation)) %>% 
+  
+  # ---- addutional wrangling for dumbell plot processing ----
+mutate(group_label = case_when(percent_female >= 75 ~ "Occupations that are 75%+ female",
+                               percent_female >= 45 & percent_female <= 55 ~ "Occupations that are 45-55% female",
+                               percent_male >= 75 ~ "Occupations that are 75%+ male"))
+
+```
+
