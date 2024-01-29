@@ -2,11 +2,18 @@
 title: 'Visualizing Evolution'
 subtitle: 'Lecture 3.3 for EDS 240'
 author: 'Briana Barajas'
+format:
+  html:
+    code-fold: true
+    code-summary: "View code"
 ---
-## Background
-Enter here
 
-## Preparation 
+## Background
+
+Background available on the course website, [lecture 3.3](%22https://samanthacsik.github.io/EDS-240-data-viz/course-materials/week3.html%22)
+
+## Preparation
+
 ```{r, warning=FALSE, message=FALSE, results='hide'}
 ## === Load libraries ===
 library(tidycensus)
@@ -23,10 +30,11 @@ census_api_key(censusKEY)
 lyme <- read_csv(here::here("week3", "data", "LD-Case-Counts-by-County-01-20.csv"))
 ```
 
-
 ## Wrangling
+
 Data wrangling and creating summary statistics
-```{r}
+
+```{r, message=FALSE, warning=FALSE}
 # ========== lyme data ===========
 lyme_clean <- lyme %>% 
   
@@ -70,10 +78,194 @@ lyme_pop <- left_join(lyme_by_state, us_state_pop) %>%
   #add col with number of 100k people per state
   mutate(pop100k = population/100000) %>% 
   
-  #calculate num cases per 100k people (common for reporting disease)
+  #calculate No. cases per 100k people (common for reporting disease)
   mutate(cases_per100k = total_cases/pop100k)
 
-  
+```
+
+## Visualization
+
+### Line plot
+
+Basic line plots and applications of `gghighlight`. For any of these, adding `geom_point` afterwards can add points to the lines.
+
+::: panel-tabset
+#### Sphagetti plot
+
+```{r, warning=FALSE, message=FALSE}
+# create sphaghetti plot of cases over year for different states
+lyme_pop %>% 
+  filter(year %in% c(2010:2020)) %>% 
+  ggplot(aes(x = year, y = cases_per100k, group = state)) +
+  geom_line() +
+  labs(title = "Sphaghetti Plot - All States Unlabeled")
+```
+Not official plot, just a name for a messy line plot. Avoid theme
+
+#### Single Highlight
+
+```{r, warning=FALSE, message=FALSE}
+# create a better plot that highlights a state of interest
+lyme_pop %>% 
+  filter(year %in% c(2010:2020)) %>% 
+  ggplot(aes(x = year, y = cases_per100k, group = state)) +
+  geom_line() +
+  gghighlight::gghighlight(state == "New Jersey") + #highlight single state
+  labs(title = "Highlight a Single Group")
+```
+
+#### Multiple Highlight
+
+```{r, warning=FALSE, message=FALSE}
+# update all colors
+lyme_pop %>% 
+  filter(year %in% c(2010:2020)) %>% 
+  ggplot(aes(x = year, y = cases_per100k, group = state, color = state)) +
+  geom_line() +
+  gghighlight::gghighlight(max(cases_per100k) > 100) + #highlight using conditional
+  labs(title = "Highlight Based on a Conditional")
 
 ```
+:::
+
+Additional considerations:
+
+-   Choosing the axis for line plots can be more flexible, it does not need to start at 0
+-   `ggplot` will select the best axis parameters based on your data
+
+### Aspect Ratio
+
+-   aspect ratio is also automatically set by `ggplot`
+    -   impact perception of slope, so be sure to choose appropriately to avoid misleading plots
+    -   e.g. if there value of x is wide, widening the aspect ratio can improve readability
+
+::: panel-tabset
+#### Default Ratio
+
+Created a line plot, allowing ggplot to set the aspect ratio
+
+```{r}
+lyme_pop %>% 
+  filter(year %in% c(2013:2019)) %>% 
+  filter(state == "Vermont") %>% 
+  ggplot(aes(x = year, y = cases_per100k, group = state)) +
+  geom_line()
+```
+
+#### Ratio 1
+
+Adjust aspect ratio to 1
+
+```{r}
+lyme_pop %>% 
+  filter(state == "Vermont") %>% 
+  filter(year %in% c(2010:2020)) %>% 
+  ggplot(aes(x = year, y = cases_per100k, group = state)) +
+  geom_line() +
+  scale_y_continuous(breaks = seq(0, 190, by = 1)) +
+  coord_fixed(ratio = 1) #adjust aspect ratio
+```
+
+#### Ratio 1/50
+
+Recall that the ratio is based on the value of y/x
+
+```{r}
+lyme_pop %>% 
+  filter(state == "Vermont") %>% 
+  filter(year %in% c(2010:2020)) %>% 
+  ggplot(aes(x = year, y = cases_per100k, group = state)) +
+  geom_line() +
+  scale_y_continuous(breaks = seq(0, 190, by = 1)) +
+  coord_fixed(ratio = 1/50) #adjust aspect ratio
+```
+:::
+
+### Area Plot
+
+Area plots are similar to a line plot, but filled in. They can be aesthetically pleasing, but can be less clear than line plots. Later we'll talk about the "data-ink" ratio, which defines some useful guidelines for fill/color in data visualization.
+
+::: panel-tabset
+#### Basic
+
+```{r}
+lyme_pop %>% 
+  filter(year %in% c(2010:2020)) %>% 
+  filter(state == "New Jersey") %>%  
+  ggplot(aes(x = year, y = cases_per100k, group = state)) +
+  geom_area() 
+```
+
+#### Change fill
+
+```{r}
+lyme_pop |> 
+  filter(year %in% c(2010:2020)) |> 
+  filter(state == "New Jersey") |> 
+  ggplot(aes(x = year, y = cases_per100k, group = state, fill = state)) +
+  geom_area() +
+  scale_fill_manual(values = c("lightslateblue")) +
+  theme(legend.position = "none") 
+```
+
+#### Panel Margins
+
+```{r}
+lyme_pop |> 
+  filter(year %in% c(2010:2020)) %>% 
+  filter(state == "New Jersey") %>%  
+  ggplot(aes(x = year, y = cases_per100k, group = state, fill = state)) +
+  geom_area() +
+  scale_fill_manual(values = c("lightslateblue")) +
+  scale_x_discrete(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  theme(legend.position = "none")
+```
+Using `scale_x_discrete` expands it in the x-direction and removes the empty buffer space on the side. Similarly `scale_y_continuous` allows it to take up the full space in the y-axis.
+
+#### Groups
+
+```{r}
+lyme_pop %>% 
+  filter(year %in% c(2010:2020)) |> 
+  filter(state %in% c("Maine", "Rhode Island", "New Hampshire", "Vermont")) %>% 
+  ggplot(aes(x = year, y = cases_per100k, group = state, fill = state)) +
+  geom_area()
+```
+Group and fill by state
+
+:::
+
+Additional considerations:
+
+-   Easy to misinterpret
+-   Useful for comparing groups
+    -   still misleading, since the group in the background looks the largest
+    -   ordered alphabetically
+
+### Proportional Area plot
+This plot can  be easier to interpret then a stacked area plot. Instead of having the value of y as the y-axis, it uses a proportion. This makes it easier to compare groups with visualization (no subtraction needed).
+```{r}
+lyme_pop %>% 
+  filter(year %in% c(2010:2020)) %>%  
+  filter(state %in% c("Maine", "Rhode Island", "New Hampshire", "Vermont")) %>%  
+  ggplot(aes(x = year, y = cases_per100k, group = state, fill = state)) +
+  geom_area(position = "fill") +
+  
+  # adjust labels using the scales package
+  scale_y_continuous(labels = scales::label_percent(scale = 100))
+```
+### Line vs. Area plot
+For this data specifically, a line plot ends up being the best option (in my opinion). Still, the final choice depends on the data and what you're trying to illustrate.
+
+```{r}
+lyme_pop |> 
+  filter(year %in% c(2010:2020)) |> 
+  filter(state %in% c("Maine", "Rhode Island", "New Hampshire", "Vermont")) |> 
+  ggplot(aes(x = year, y = cases_per100k, group = state, color = state)) +
+  geom_line() +
+  facet_wrap(~state) +
+  theme_minimal()
+```
+
 
