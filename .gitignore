@@ -5,3 +5,5 @@
 /week*/data/
 .DS_Store
 /week3/KEYS.R
+*_files/
+*.html
