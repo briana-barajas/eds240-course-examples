@@ -1,0 +1,351 @@
+---
+title: "Typography & Annotations"
+---
+
+# 6.1 Typography
+
+## Choosing Typeface & Fonts
+
+-   context matters
+-   when in doubt, use a sans-serif style
+    -   styles with no edges\\
+-   when adding numbers, choose a mono spaces typeface with figures that ...
+
+## Fonts in `ggplot`
+
+-   packages
+
+    -   `showtext`
+
+    -   `extrafont`
+
+Example - update fonts on dumbbell plot
+
+```{r, include=FALSE}
+# wrangle data
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                    setup                                 ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#..........................load packages.........................
+library(tidyverse)
+library(showtext)
+
+#..........................import data...........................
+jobs <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-03-05/jobs_gender.csv")
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                wrangle data                              ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+jobs_clean <- jobs |>
+
+  # add cols (needed for dumbbell plot) ----
+  mutate(percent_male = 100 - percent_female, # % of females within each industry was already included
+       difference_earnings = total_earnings_male - total_earnings_female) |>  # diff in earnings between M & F
+
+  # rearrange columns ----
+  relocate(year, major_category, minor_category, occupation,
+           total_workers, workers_male, workers_female,
+           percent_male, percent_female,
+           total_earnings, total_earnings_male, total_earnings_female, difference_earnings,
+           wage_percent_of_male) |>
+
+  # drop rows with missing earning data ----
+  drop_na(total_earnings_male, total_earnings_female) |>
+
+  # make occupation a factor ----
+  mutate(occupation = as.factor(occupation)) |>
+
+# ---- this next step is for creating our dumbbell plots ----
+
+# classify jobs by percentage male or female ----
+  mutate(group_label = case_when(
+    percent_female >= 75 ~ "Occupations that are 75%+ female",
+    percent_female >= 45 & percent_female <= 55 ~ "Occupations that are 45-55% female",
+    percent_male >= 75 ~ "Occupations that are 75%+ male"
+  ))
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                              create subset df                            ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#....guarantee the same random samples each time we run code.....
+set.seed(0)
+
+#.........get 10 random jobs that are 75%+ female (2016).........
+f75 <- jobs_clean |>
+  filter(year == 2016, group_label == "Occupations that are 75%+ female") |>
+  slice_sample(n = 10)
+
+#..........get 10 random jobs that are 75%+ male (2016)..........
+m75 <- jobs_clean |>
+  filter(year == 2016, group_label == "Occupations that are 75%+ male") |>
+  slice_sample(n = 10)
+
+#........get 10 random jobs that are 45-55%+ female (2016).......
+f50 <- jobs_clean |>
+  filter(year == 2016, group_label == "Occupations that are 45-55% female") |>
+  slice_sample(n = 10)
+
+#.......combine dfs & relevel factors (for plotting order).......
+subset_jobs <- rbind(f75, m75, f50) |>
+  mutate(group_label = fct_relevel(group_label, 
+                                   "Occupations that are 75%+ female",
+                                   "Occupations that are 45-55% female", 
+                                   "Occupations that are 75%+ male"))
+```
+
+Prepare Customizations
+
+```{r}
+# create palette w/colors for male vs female, and text
+earnings_pal <- c("males" = "#2D7787",
+                  "females" = "#FC6B4B",
+                  "dark_text" = "#0C1509",
+                  "light_text" = "#4E514D")
+
+# can use view_palette functin to see preview of pal
+monochromeR::view_palette(earnings_pal)
+```
+
+```{r}
+# import Google fonts
+font_add_google(name = "Josefin Sans", # name as it is on Google
+                family = "josefin") # custom name we'll use to call the font
+
+font_add_google(name = "Sen", 
+                family = "sen")
+
+# enable showtext ----
+showtext_auto() #helps keep fonts consistent across devices
+
+# import Font Awesome fonts
+font_add(family = "fa-brands",
+         regular = here::here("fonts", "Font Awesome 6 Brands-Regular-400.otf"))
+font_add(family = "fa-regular",
+         regular = here::here("fonts", "Font Awesome 6 Free-Regular-400.otf")) 
+font_add(family = "fa-solid",
+         regular = here::here("fonts", "Font Awesome 6 Free-Solid-900.otf"))
+```
+
+Apply new color to dumbell plot
+
+```{r}
+# store plot to add themes separately
+plot <- ggplot(subset_jobs) +
+geom_segment(aes(x = total_earnings_female, xend = total_earnings_male,
+                 y = fct_reorder(occupation, total_earnings), yend = occupation)) +
+  geom_point(aes(x = total_earnings_male, y = occupation),
+             color = earnings_pal["males"], size = 3.25) +
+  geom_point(aes(x = total_earnings_female, y = occupation),
+             color = earnings_pal["females"], size = 3.25) +
+  facet_wrap(~group_label, nrow = 3, scales = "free_y") +
+  scale_x_continuous(labels = scales::label_dollar(scale = 0.001, suffix = "k"),
+                     breaks = c(25000, 50000, 75000, 100000, 125000))
+```
+
+```{r}
+plot +
+  labs(title = "Males earn more than gemales across most occupations",
+       subtitle = "Median earnings of full-time <span style = 'color:#2D7787; font-size: 20pt;'>**male**</span> vs. <span style = 'color:#FC6B4B; font-size: 20pt;'>**female**</span> workers by occupation in 2016",
+       caption = "Data Source: TidyTuesday (March 5, 2019)") +
+  
+  # apply theme minimal to simplify theme & then build off it
+  theme_minimal() +
+  
+  # Update theme (text and axes)
+  theme(
+    
+    # adjust title and subtitle to be on the left
+    plot.title.position = "plot",
+    
+    # update title size, face, and to a color in our pal
+    plot.title = element_text(face = "bold",
+                              family = "josefin",
+                              size = 25,
+                              color = earnings_pal["dark_text"]),
+    
+    # update subtitle size, color, and spacing
+    plot.subtitle = ggtext::element_textbox_simple(size = 17,
+                                 family = "sen",
+                                 color = earnings_pal["light_text"],
+                                 margin = margin(0.5, 0, 1, 0,
+                                                 unit = "lines")),
+    # update caption size, color, and spacing
+    plot.caption = element_text(face = "italic",
+                                family = "sen",
+                                color = earnings_pal["light_text"],
+                                margin = margin(4, 0, 0, 0, unit = "lines")),
+    
+    # update text above each panel (facet)
+    strip.text.x = element_text(face = "bold",
+                                family = "josefin",
+                                size = 12,
+                                hjust =0),
+    
+    # update panel spacing (more space b/w panels)
+    panel.spacing.y = unit(1, "lines"),
+    
+    # update ALL axis text (occupations listed and $ values)
+    axis.text = element_text(color = earnings_pal["light_text"],
+                             family = "sen"),
+    
+    # make x-axis text larger than y-axis
+    axis.text.x = element_text(size = 10),
+    
+    # remove axis titles
+    axis.title = element_blank()
+  )
+```
+
+# 6.2 Annotations
+
+## Examples
+
+### Temperature on Lobster Metabolism
+
+Plot code to start
+
+```{r}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                    setup                                 ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#.........................load libraries.........................
+library(tidyverse)
+
+#..........................read in data..........................
+
+# read in Google Sheet ----
+lobs <- googlesheets4::read_sheet("https://docs.google.com/spreadsheets/d/1DkDVcl_9rlaqznHfa_v1V1jtZqcuL75Q6wvAHpnCHuk/edit#gid=2143433533") |>
+  mutate(temp = as.factor(temp))
+
+# # alternatively, read in csv file ----
+# lobs <- read_csv(here::here("week6", "data", "metabolism-foraging-data.csv")) |>
+#   mutate(temp = as.factor(temp))
+
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                            create lobster plot                           ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#..........................create theme..........................
+lob_theme <- function(){
+  theme_light() +
+    theme(
+      axis.title.x = ggtext::element_markdown(size = 13,
+                                              margin = margin(t = 1, r = 0, b = 0, l = 0, unit = "lines")),
+      axis.title.y = ggtext::element_markdown(size = 13,
+                                              margin = margin(t = 0, r = 1, b = 0, l = 0, unit = "lines")),
+      axis.text = element_text(color = "black", size = 12),
+      panel.border = element_rect(colour = "black", size = 0.7),
+      panel.grid = element_blank(),
+      legend.title = element_text(size = 11),
+      legend.text = element_text(size = 10),
+      legend.position = c(0.95, 0.95),
+      legend.justification = c(0.95, 0.95),
+      legend.box.background = element_rect(color = "black", size = 1.1)
+
+    )
+}
+
+#..........................create scales.........................
+lob_palette <- c("11" = "#7B8698",
+                 "16" = "#BAD7E5",
+                 "21" = "#DC7E7C",
+                 "26" = "#7D3E40")
+
+lob_shapes <-  c("11" = 15,
+                 "16" = 16,
+                 "21" = 17,
+                 "26" = 18)
+
+lob_sizes <- c("11" = 6,
+               "16" = 6,
+               "21" = 6,
+               "26" = 7) #diamond looks smaller than other shapes, increase size
+
+#........................create plot text........................
+x_axis_lab <- glue::glue("Resting Metabolic Rate<br>
+                         (mg O<sub>2</sub> kg<sup>-1</sup> min<sup>-1</sup>)")
+
+y_axis_lab <- glue::glue("Maximum Consumption Rate<br>
+                         (prey consumed predator<sup>-1</sup> 24hr<sup>-1</sup>)")
+
+#............................plot data...........................
+lob_plot <- ggplot(lobs, aes(x = SMR, y = avg_eaten,
+                 color = temp, shape = temp, size = temp)) +
+  geom_point() +
+  scale_color_manual(values = lob_palette, name = "Temperature (ºC)") +
+  scale_shape_manual(values = lob_shapes, name = "Temperature (ºC)") +
+  scale_size_manual(values = lob_sizes, name = "Temperature (ºC)") +
+  scale_x_continuous(breaks = seq(0, 1.5, by = 0.2)) +
+  scale_y_continuous(breaks = seq(0, 35, by = 5)) +
+  labs(x = x_axis_lab,
+       y = y_axis_lab) +
+  lob_theme()
+
+```
+
+Building custom annotations
+
+-   `geom_text()` and `geom_label()` take aesthetic mappings, draw the geom once per each row of the data frame
+
+```{r}
+lob_plot +
+  
+  # add text for important lobsters
+  geom_text(
+    x = 0.1, y = 24, # use coords to place text
+    label = "Important Lobsters",
+    size = 4, 
+    color = "black",
+    hjust = "inward"
+  ) +
+  
+  # add bounding box for important lobsters
+  geom_rect(
+    xmin = 0.25, xmax = 0.85, # min and max values for box positions
+    ymin = 8.5, ymax = 18,
+    alpha = 0.5, # translucent
+    fill = "gray40", # fill rect 
+    color = "black", # box border
+    show.legend = FALSE # remove border around points in legend
+  )
+```
+
+-   `anotate()`
+    -   better option
+```{r}
+lob_plot +
+  
+  # add text for important lobsters
+  geom_text(
+    x = 0.1, y = 24, # use coords to place text
+    label = "Important Lobsters",
+    size = 4, 
+    color = "black",
+    hjust = "inward"
+  ) +
+  
+  # add bounding box for important lobsters
+  annotate(
+    geom = "rect",
+    xmin = 0.25, xmax = 0.85, # min and max values for box positions
+    ymin = 8.5, ymax = 18,
+    alpha = 0.5, # translucent
+    fill = "gray40", # fill rect 
+    color = "black" # box border
+  ) +
+  
+  # add arrow from text and box
+  annotate(
+    geom = "curve",
+    x = 0.3, xend = 0.5, # define where the arrow starts and ends
+    y = 23.8, yend = 19,
+    curvature = -0.15, # change direction of curve
+    arrow = arrow(length = unit(0.3, "cm")) # add points on arrow
+  )
+```
+
