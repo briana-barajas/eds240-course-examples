@@ -1,0 +1,80 @@
+---
+title: "Discussion - Non-traditional Plots"
+author: "Briana Barajas"
+date: 2024-02-14
+---
+
+## Non-traditional Plot Types
+
+**Ternary plots**
+
+-   three variables in a pair-wise manner
+-   review examples
+-   suggestions
+    -   avoid adding background color, best to stick to 3 variables
+    -   minimize grid lines and color when possible
+-   `ggtern` package
+
+**Radar/Spider charts**
+
+-   NOT limited by 3 variables the way ternary plots are
+-   only one unit of measurement (along each bold line)
+    -   makes comparisons quick
+-   get general points across
+    -   do not NEED to include specific values
+    -   good option for general audiences
+-   suggestions
+    -   leave the plot unfilled
+    -   even transparent ones are difficult to interpret
+-   note
+
+**Sunburst Plot / Radial Tree Map**
+
+-   proportional contributions of different categories within a hierrchy
+-   useful for exploratory data
+-   great as an interactive plot
+    -   can hover over individual sections and add pop-ups with more specific information
+
+    -   does not translate well to paper (hard to make colors different)
+-   note
+
+**Heatmap**
+
+-   can use `pheatmap` in R
+
+    -   package allows you to highlight which rows and columns are aggregated
+
+-   easy to see large trends and outliers
+
+-   can set cut-offs for numbers of rows/columns
+
+    -   avoid getting overly complicated
+
+-   color based on value
+
+**Sankey Diagram**
+
+-   depicts the flow of values, transition of dominance, and increase/decreases
+
+-   adding values works best for more simple plots
+
+    -   if there are lots of separate flows, adding values creates clutter
+
+-   suggestions
+
+    -   offset the bars to make connections more clear
+
+-   note
+
+**Treemap Plot**
+
+-   similar to sunburst, popular for online/interactive plot
+-   no axis labels = no nuance
+
+## Packages
+
+-   turnary - `ggturn`
+-   radar plot - `fmsb`
+-   heat map - `ggplot` or `pheatmap`
+-   sankey - `sankey`
+-   sunburst - `sunburstR`
